@@ -88,7 +88,12 @@ module Mwsrb
         ]
       end
 
-      Mwsrb::Client.send(verb.downcase, "#{path}?#{body.to_query}", headers: headers)
+      Mwsrb::Response.new(
+        Mwsrb::Client.send(
+          verb.downcase, "#{path}?#{body.to_query}",
+          headers: headers
+        )
+      )
 
     ensure
       log { "=== End MWS request #{Time.now}" }
