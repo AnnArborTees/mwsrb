@@ -1,5 +1,11 @@
 require "mwsrb/version"
+require "mwsrb/marketplace"
+require "mwsrb/client"
+require "mwsrb/api"
 
 module Mwsrb
-  # Your code goes here...
+end
+
+unless defined?(Amazon)
+  Amazon = Mwsrb
 end

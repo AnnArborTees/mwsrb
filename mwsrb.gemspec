@@ -7,11 +7,11 @@ Gem::Specification.new do |spec|
   spec.name          = "mwsrb"
   spec.version       = Mwsrb::VERSION
   spec.authors       = ["Nigel Baillie"]
-  spec.email         = ["metreckk@gmail.com"]
+  spec.email         = ["devteam@annarbortees.com"]
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.summary       = %q{Amazon MWS Ruby Client}
+  spec.description   = %q{Provides a reasonably one-to-one mapping to Amazon's MWS API: http://docs.developer.amazonservices.com/en_ES/dev_guide/DG_IfNew.html}
+  spec.homepage      = "https://github.com/AnnArborTees/mwsrb"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
@@ -30,7 +30,13 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_runtime_dependency 'multi_xml'
+  spec.add_runtime_dependency 'httparty'
+  spec.add_runtime_dependency 'activesupport', ">= 4.0"
+  spec.add_runtime_dependency "ruby-hmac"
+
   spec.add_development_dependency "bundler", "~> 1.13"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "byebug"
 end
