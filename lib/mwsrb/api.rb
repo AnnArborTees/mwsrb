@@ -170,7 +170,7 @@ module Mwsrb
     #
     def default_params
       {
-        'Merchant'         => @merchant,
+        'SellerId'         => @merchant,
         'SignatureMethod'  =>'HmacSHA256',
         'SignatureVersion' =>'2',
         'Timestamp'        => Time.now.iso8601,
