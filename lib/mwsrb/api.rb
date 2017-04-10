@@ -9,6 +9,7 @@ module Mwsrb
     attr_reader :name
     attr_reader :verb
     attr_reader :merchant
+    attr_reader :client
     attr_accessor :debug_log
 
     def initialize(name, options = {})
@@ -22,6 +23,8 @@ module Mwsrb
 
       @params      = resolve_lists_and_dates(default_params.merge(options[:params] || {}))
       @headers     = default_headers.merge(options[:headers] || {})
+
+      @client      = options[:client]
 
       @aws_access_key_id = options[:aws_access_key_id]
       @secret_access_key = options[:secret_access_key]

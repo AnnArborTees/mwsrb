@@ -42,8 +42,11 @@ module Mwsrb
 
     def [](api_category, options = {})
       category = api_category.gsub(' ', '')
-      Mwsrb::Api.new(category, @options.merge(options))
+      Mwsrb::Api.new(category, @options.merge(options).merge(client: self))
     end
+
+    # TODO some kind of throttling handling.
+    # Perhaps keep a hash of { Operation => Last Throttling Headers }.
 
     private
 
