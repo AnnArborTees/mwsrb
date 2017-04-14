@@ -3,11 +3,15 @@ module Mwsrb
     attr_reader :response
     alias_method :httparty, :response
 
-    delegate :body, :headers, to: :response
-    delegate :css, :xpath,    to: :nokogiri
+    delegate :body, :headers, :parsed_response, to: :response
+    delegate :css, :xpath, :at_css, :at_xpath,  to: :nokogiri
 
     def initialize(httparty_response)
       @response = httparty_response
+    end
+
+    def inspect
+      "#<Mwsrb::Response:#{object_id} body=\"#{body}\">"
     end
 
     def to_h
@@ -16,6 +20,13 @@ module Mwsrb
 
     def nokogiri
       @nokogiri ||= Nokogiri::XML(@response.body).tap(&:remove_namespaces!)
+    end
+
+    def error
+      error_element = css 'Error'
+      return nil if error_element.blank?
+
+      "#{error_element.css('Type').content}: #{error_element.css('Message').content}"
     end
   end
 end

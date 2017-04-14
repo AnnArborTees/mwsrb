@@ -6,6 +6,7 @@ module Mwsrb
     base_uri 'https://mws.amazonservices.com'
 
     attr_reader :options
+    attr_reader :throttling
 
     # Mwsrb::Client (AKA Amazon::Client) can be used like
     #
@@ -34,6 +35,7 @@ module Mwsrb
     #
     def initialize(options = {})
       @options = infer_options_from_figaro.merge(options)
+      @throttling = {}
     end
 
     def inspect
@@ -44,9 +46,6 @@ module Mwsrb
       category = api_category.gsub(' ', '')
       Mwsrb::Api.new(category, @options.merge(options).merge(client: self))
     end
-
-    # TODO some kind of throttling handling.
-    # Perhaps keep a hash of { Operation => Last Throttling Headers }.
 
     private
 

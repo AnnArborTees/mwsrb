@@ -6,6 +6,18 @@ module Mwsrb
   # "Fulfillment Inventory".
   #
   class Api
+    Quota = Struct.new(:remaining, :resets_on) do
+      def self.new(headers)
+        remaining = headers['x-mws-quota-remaining']
+        resets_on = headers['x-mws-quota-resetson']
+
+        return nil if remaining.blank? || resetson.blank?
+
+        super(remaining.to_i, DateTime.parse(resets_on))
+      end
+    end
+    ThrottledError = Class.new(StandardError)
+
     attr_reader :name
     attr_reader :verb
     attr_reader :merchant
@@ -20,14 +32,16 @@ module Mwsrb
       @merchant    = options[:merchant]    || options[:seller_id] || options[:merchant_id]
       @marketplace = options[:marketplace] || Mwsrb::Marketplace::US
       @debug_log   = options[:log]         || options[:debug_log]
+      @debug_log   = STDOUT.method(:puts) if @debug_log == true
 
-      @params      = resolve_lists_and_dates(default_params.merge(options[:params] || {}))
+      @params      = resolve_lists_and_dates(options[:params] || {}).stringify_keys
       @headers     = default_headers.merge(options[:headers] || {})
 
       @client      = options[:client]
 
       @aws_access_key_id = options[:aws_access_key_id]
       @secret_access_key = options[:secret_access_key]
+
     end
 
     #
@@ -47,56 +61,97 @@ module Mwsrb
 
       log { "=== Begin MWS request #{Time.now}" }
 
-      # Headers can be specified with special :headers
-      # key passed as a param.
-      headers =
-        @headers
-        .merge(params.delete(:headers) || {})
+      begin
+        # Grab throttling data
+        throttling_key = "#{name}##{operation}"
+        quota = client.throttling[throttling_key]
 
-      # Request body will first check the params option
-      # sent during construction, then merge in params passed
-      # to this method, then merge in necessary options.
-      body =
-        @params.stringify_keys
-        .merge(resolve_lists_and_dates(params.stringify_keys))
-        .merge({
-          'Action'         => operation,
-          'AWSAccessKeyId' => @aws_access_key_id
-        })
-        .sort
-        .to_h
-        .with_indifferent_access
+        # Wait for throttling to cool down
+        if quota.present?
+          if quota.remaining <= 0 && DateTime.now < quota.resets_on
+            sleep_time = quota.resets_on - DateTime.now + 0.5
+            log { "Waitng #{sleep_time} seconds to avoid throttling" }
+            sleep sleep_time
+          end
+        end
 
-      path = "/#{name}/#{body[:Version]}"
+        # Headers can be specified with special :headers
+        # key passed as a param.
+        headers =
+          @headers
+          .merge(params.delete(:headers) || {})
 
-      # This 'canonical' is encrypted to form a signature
-      # that will be checked by the Amazon API.
-      canonical = [
-        verb,
-        Mwsrb::Client.base_uri.gsub(/^.+:\/\//, ''),
-        path,
-        body.to_query
-      ].join("\n")
+        # Request body will first check the params option
+        # sent during construction, then merge in params passed
+        # to this method, then merge in necessary options.
+        body =
+          default_params
+          .merge(@params)
+          .merge(resolve_lists_and_dates(params.stringify_keys))
+          .merge({
+            'Action'         => operation,
+            'AWSAccessKeyId' => @aws_access_key_id
+          })
+          .sort
+          .to_h
+          .with_indifferent_access
 
-      # Generate signature, signed with the secret key.
-      signature = generate_signature(@secret_access_key, canonical)
-      body[:Signature] = signature
+        path = "/#{name}/#{body[:Version]}"
 
-      log do
-        [
-          "PATH:  #{path}",
-          "HEADERS:\n#{JSON.pretty_generate(headers)}",
-          "BODY:\n#{JSON.pretty_generate(body)}",
-          "CANONICAL:\n  #{canonical.split("\n").join("\n  ")}\n"
-        ]
-      end
+        # This 'canonical' is encrypted to form a signature
+        # that will be checked by the Amazon API.
+        canonical = [
+          verb,
+          Mwsrb::Client.base_uri.gsub(/^.+:\/\//, ''),
+          path,
+          body.to_query
+        ].join("\n")
 
-      Mwsrb::Response.new(
-        Mwsrb::Client.send(
-          verb.downcase, "#{path}?#{body.to_query}",
-          headers: headers
+        # Generate signature, signed with the secret key.
+        signature = generate_signature(@secret_access_key, canonical)
+        body[:Signature] = signature
+
+        log do
+          [
+            "PATH:  #{path}",
+            "HEADERS:\n#{JSON.pretty_generate(headers)}",
+            "BODY:\n#{JSON.pretty_generate(body)}",
+            "CANONICAL:\n  #{canonical.split("\n").join("\n  ")}\n"
+          ]
+        end
+
+        response = Mwsrb::Response.new(
+          Mwsrb::Client.send(
+            verb.downcase, "#{path}?#{body.to_query}",
+            headers: headers
+          )
         )
-      )
+
+        # Update throttling information for next request
+        quota = Quota.new(response.headers)
+
+        if quota
+          client.throttling[throttling_key] = quota
+        else
+          # See if we've been throttled (some api calls don't provide this information)
+          msg = response.at_css "Error Message"
+
+          if msg.present? && msg.content == "Request is throttled"
+            sleep_time = 10.seconds
+
+            log { "Request throttled! Waiting #{sleep_time} seconds" }
+            sleep sleep_time
+
+            # Try again
+            raise ThrottledError
+          end
+        end
+
+        response
+
+      rescue ThrottledError
+        retry
+      end
 
     ensure
       log { "=== End MWS request #{Time.now}" }
