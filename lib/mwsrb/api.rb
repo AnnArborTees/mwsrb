@@ -11,7 +11,7 @@ module Mwsrb
         remaining = headers['x-mws-quota-remaining']
         resets_on = headers['x-mws-quota-resetson']
 
-        return nil if remaining.blank? || resetson.blank?
+        return nil if remaining.blank? || resets_on.blank?
 
         super(remaining.to_i, DateTime.parse(resets_on))
       end
