@@ -7,13 +7,13 @@ module Mwsrb
   #
   class Api
     Quota = Struct.new(:remaining, :resets_on) do
-      def self.new(headers)
+      def self.create(headers)
         remaining = headers['x-mws-quota-remaining']
         resets_on = headers['x-mws-quota-resetson']
 
         return nil if remaining.blank? || resets_on.blank?
 
-        super(remaining.to_i, DateTime.parse(resets_on))
+        new(remaining.to_i, DateTime.parse(resets_on))
       end
     end
     ThrottledError = Class.new(StandardError)
@@ -128,7 +128,7 @@ module Mwsrb
         )
 
         # Update throttling information for next request
-        quota = Quota.new(response.headers)
+        quota = Quota.create(response.headers)
 
         if quota
           client.throttling[throttling_key] = quota
