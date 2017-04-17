@@ -22,7 +22,7 @@ module Mwsrb
     # response = cilent['Products'].request(
     #   'GetMatchingProductForId',
     #   IdType: 'ASIN',
-    #   IdList: => [{ Id: 'ASDFGVWE' }, { Id: 'OOBIEUIH' }]
+    #   :IdList => [{ Id: 'ASDFGVWE' }, { Id: 'OOBIEUIH' }]
     # )
     # ```
     #

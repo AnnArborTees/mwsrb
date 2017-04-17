@@ -10,7 +10,13 @@ describe Mwsrb do
 
     it "turns hashes in the form [{ Id: 'ASDFG' }, { Id: 'FDDSAG' }] "\
        "to { Id.1: 'ASDFG', Id.2: 'FDDSAG' }" do
-      expect(subject.send(:resolve_lists, {IdList: [{ Id: 'ASDFG' }, { Id: 'FDDSAG' }]}))
+      expect(subject.send(:resolve_lists_and_dates, {IdList: [{ Id: 'ASDFG' }, { Id: 'FDDSAG' }]}))
+        .to eq({ 'IdList.Id.1' => 'ASDFG', 'IdList.Id.2' => 'FDDSAG' })
+    end
+
+    it "turns array values in the form OrderId: ['ASDFG', 'FDDSAG'] "\
+       "to { OrderId.Id.1: 'ASDFG', OrderId.Id.2: 'FDDSAG' }" do
+      expect(subject.send(:resolve_lists_and_dates, {IdList: [{ Id: 'ASDFG' }, { Id: 'FDDSAG' }]}))
         .to eq({ 'IdList.Id.1' => 'ASDFG', 'IdList.Id.2' => 'FDDSAG' })
     end
   end

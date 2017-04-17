@@ -1,5 +1,15 @@
 module Mwsrb
   class Response
+    def self.delegate(*methods, options)
+      methods.each do |name|
+        class_eval <<-RUBY
+        def #{name}(*args, &block)
+          #{options[:to]}.#{name}(*args, &block)
+        end
+        RUBY
+      end
+    end
+
     attr_reader :response
     alias_method :httparty, :response
 

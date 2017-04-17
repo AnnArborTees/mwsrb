@@ -34,8 +34,12 @@ module Mwsrb
       @debug_log   = options[:log]         || options[:debug_log]
       @debug_log   = STDOUT.method(:puts) if @debug_log == true
 
-      @params      = resolve_lists_and_dates(options[:params] || {}).stringify_keys
+      @params      = resolve_lists_and_dates(options[:params] || {})
       @headers     = default_headers.merge(options[:headers] || {})
+
+      if @params.respond_to?(:stringify_keys)
+        @params = @params.stringify_keys
+      end
 
       @client      = options[:client]
 
@@ -87,7 +91,7 @@ module Mwsrb
         body =
           default_params
           .merge(@params)
-          .merge(resolve_lists_and_dates(params.stringify_keys))
+          .merge(resolve_lists_and_dates(params.try(:stringify_keys) || params))
           .merge({
             'Action'         => operation,
             'AWSAccessKeyId' => @aws_access_key_id
@@ -177,20 +181,27 @@ module Mwsrb
       params.each do |key, value|
         case value
         when Array
+          inferred_el_name = element_name(key)
+
           # element_counts will usually look something like:
           # { Id: 3 }
           element_counts = Hash.new(0)
 
           value.each do |element|
-            unless element.is_a?(Hash)
-              raise "Array params values must be in the form "\
-                    "[{ Id: 'ASDFG' }, { Id: 'FDDSAG' }]"
-            end
+            if element.is_a?(Hash)
+              # `value` is in the form:
+              # [{ Id: 'ASDFG' }, { Id: 'FDDSAG' }]
+              #
+              # NOTE this "each" will generally only hit one element
+              element.each do |el_name, el_val|
+                element_counts[el_name] += 1
+                new_params["#{key}.#{el_name}.#{element_counts[el_name]}"] = el_val
+              end
 
-            # NOTE this "each" will generally only hit one element
-            element.each do |el_name, el_val|
-              element_counts[el_name] += 1
-              new_params["#{key}.#{el_name}.#{element_counts[el_name]}"] = el_val
+            else
+
+              # Here we use the inferred "element names" by the camelcase key name
+              new_params["#{key}.#{inferred_el_name}.#{element_counts[inferred_el_name]}"] = element
             end
           end
 
@@ -202,6 +213,20 @@ module Mwsrb
       end
 
       new_params
+    end
+
+    #
+    # Breaks out the "Id" from "OrderId"
+    #
+    def element_name(key)
+      start_index = 0
+      key.to_s.each_char.reverse_each.with_index do |ch, i|
+        if ch == ch.upcase
+          start_index = i
+          break
+        end
+      end
+      key[start_index..-1]
     end
 
     #
