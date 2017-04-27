@@ -198,14 +198,15 @@ module Mwsrb
               #
               # NOTE this "each" will generally only hit one element
               element.each do |el_name, el_val|
-                element_counts[el_name] += 1
-                new_params["#{key}.#{el_name}.#{element_counts[el_name]}"] = el_val
+                count = (element_counts[el_name] += 1)
+                new_params["#{key}.#{el_name}.#{count}"] = el_val
               end
 
             else
 
               # Here we use the inferred "element names" by the camelcase key name
-              new_params["#{key}.#{inferred_el_name}.#{element_counts[inferred_el_name]}"] = element
+              count = (element_counts[inferred_el_name] += 1)
+              new_params["#{key}.#{inferred_el_name}.#{count}"] = element
             end
           end
 

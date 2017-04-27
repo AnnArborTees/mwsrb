@@ -28,6 +28,10 @@ describe Mwsrb do
       expect(subject.send(:element_name, "OrderId")).to eq 'Id'
     end
 
+    it "turns 'MarketplaceId' into 'Id'" do
+      expect(subject.send(:element_name, "MarketplaceId")).to eq 'Id'
+    end
+
     it "turns 'ItemStatus' into 'Status'" do
       expect(subject.send(:element_name, "ItemStatus")).to eq 'Status'
     end
