@@ -48,6 +48,7 @@ module Mwsrb
 
     end
 
+
     #
     # Inspect is overridden so as to not leak the secret access key
     # into logs.
@@ -55,6 +56,9 @@ module Mwsrb
     def inspect
       "<Mwsrb::Api(#{@verb} #{@name}):#{object_id}>"
     end
+
+
+    alias_method :call, :request
 
     def request(operation, params = {})
       raise "Must provide :aws_access_key_id"   if @aws_access_key_id.blank?
@@ -239,6 +243,7 @@ module Mwsrb
       when 'FulfillmentInventory' then "2010-10-01"
       when 'Feeds'                then "2009-01-01"
       when 'Reports'              then "2009-01-01"
+      when 'MerchantFulfillment'  then "2015-06-01"
       else "2009-01-01"
       end
     end
