@@ -223,14 +223,15 @@ module Mwsrb
     # Breaks out the "Id" from "OrderId"
     #
     def element_name(key)
-      start_index = 0
-      key.to_s.each_char.reverse_each.with_index do |ch, i|
+      key = key.to_s
+      size = key.size
+
+      key.each_char.reverse_each.with_index do |ch, i|
         if ch == ch.upcase
-          start_index = i
-          break
+          return key[(size - i - 1)..-1]
         end
       end
-      key[start_index..-1]
+      raise "Invalid key '#{key}'"
     end
 
     #

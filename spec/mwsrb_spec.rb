@@ -20,4 +20,16 @@ describe Mwsrb do
         .to eq({ 'IdList.Id.1' => 'ASDFG', 'IdList.Id.2' => 'FDDSAG' })
     end
   end
+
+  describe 'Mwsrb::Api#element_name' do
+    subject { Mwsrb::Api.new(:Testing) }
+
+    it "turns 'OrderId' into 'Id'" do
+      expect(subject.send(:element_name, "OrderId")).to eq 'Id'
+    end
+
+    it "turns 'ItemStatus' into 'Status'" do
+      expect(subject.send(:element_name, "ItemStatus")).to eq 'Status'
+    end
+  end
 end
