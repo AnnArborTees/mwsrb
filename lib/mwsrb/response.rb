@@ -33,10 +33,10 @@ module Mwsrb
     end
 
     def error
-      error_element = css 'Error'
+      error_element = at_css 'Error'
       return nil if error_element.blank?
 
-      "#{error_element.css('Type').content}: #{error_element.css('Message').content}"
+      "#{error_element.at_css('Type').content}: #{error_element.at_css('Message').content}"
     end
   end
 end
