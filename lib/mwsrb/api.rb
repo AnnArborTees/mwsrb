@@ -58,8 +58,6 @@ module Mwsrb
     end
 
 
-    alias_method :call, :request
-
     def request(operation, params = {})
       raise "Must provide :aws_access_key_id"   if @aws_access_key_id.blank?
       raise "Must provide :secret_access_key"   if @secret_access_key.blank?
@@ -164,6 +162,8 @@ module Mwsrb
     ensure
       log { "=== End MWS request #{Time.now}" }
     end
+
+    alias_method :call, :request
 
     def generate_signature(secret_access_key, canonical)
       digest = OpenSSL::Digest.new('sha256')
