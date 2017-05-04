@@ -28,7 +28,7 @@ module Mwsrb
       @name        = name.to_s
       @verb        = (options[:verb] || 'POST').upcase
 
-      @endpoint    = options[:endpoint]
+      @endpoint    = options[:endpoint]    || Mwsrb::Client.base_uri
       @user_agent  = options[:user_agent]  || 'MWSRB'
       @merchant    = options[:merchant]    || options[:seller_id] || options[:merchant_id]
       @marketplace = options[:marketplace] || Mwsrb::Marketplace::US
@@ -110,7 +110,7 @@ module Mwsrb
         # that will be checked by the Amazon API.
         canonical = [
           verb,
-          Mwsrb::Client.base_uri.gsub(/^.+:\/\//, ''),
+          endpoint.gsub(/^.+:\/\//, ''),
           path,
           body.to_query
         ].join("\n")
@@ -130,9 +130,8 @@ module Mwsrb
 
         response = Mwsrb::Response.new(
           Mwsrb::Client.send(
-            verb.downcase, "#{path}?#{body.to_query}",
-            headers: headers,
-            base_uri: endpoint
+            verb.downcase, "#{endpoint}/#{path}?#{body.to_query}",
+            headers: headers
           )
         )
 
