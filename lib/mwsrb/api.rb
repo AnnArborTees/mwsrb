@@ -28,6 +28,7 @@ module Mwsrb
       @name        = name.to_s
       @verb        = (options[:verb] || 'POST').upcase
 
+      @endpoint    = options[:endpoint]
       @user_agent  = options[:user_agent]  || 'MWSRB'
       @merchant    = options[:merchant]    || options[:seller_id] || options[:merchant_id]
       @marketplace = options[:marketplace] || Mwsrb::Marketplace::US
@@ -64,6 +65,7 @@ module Mwsrb
       raise "Must provide :seller or :merchant" if @merchant.blank?
 
       verb = (params.delete(:verb) || @verb).upcase
+      endpoint = (params.delete(:endpoint) || @endpoint)
 
       log { "=== Begin MWS request #{Time.now}" }
 
@@ -129,7 +131,8 @@ module Mwsrb
         response = Mwsrb::Response.new(
           Mwsrb::Client.send(
             verb.downcase, "#{path}?#{body.to_query}",
-            headers: headers
+            headers: headers,
+            base_uri: endpoint
           )
         )
 
