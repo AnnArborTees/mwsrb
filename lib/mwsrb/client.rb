@@ -34,7 +34,7 @@ module Mwsrb
     #   2. `response.body`             returns the raw XML string
     #
     def initialize(options = {})
-      @options = infer_options_from_figaro.merge(options)
+      @options = infer_options_from_environment.merge(options)
       @throttling = {}
     end
 
@@ -53,22 +53,29 @@ module Mwsrb
     # If no options are supplied, we can infer them from Application.yml
     # through Figaro using some standard key names.
     #
-    def infer_options_from_figaro
-      return {} unless defined?(Figaro)
-
+    def infer_options_from_environment
       options = {}
-      set = -> key {
-        if (val = Figaro.env.send("mws_#{key}") || Figaro.env.send(key))
+      if defined?(Figaro)
+        set = -> key {
+          if (val = Figaro.env.send("mws_#{key}") || Figaro.env.send(key))
+            options[key] = val
+          end
+          options
+        }
+
+        set[:aws_access_key_id]
+        set[:secret_access_key]
+        set[:merchant_id]
+        set[:marketplace]
+        set[:user_agent]
+
+      elsif Rails.application.credentials.mws.present?
+        Rails.application.credentials.mws.each do |key, val|
           options[key] = val
         end
-        options
-      }
+      end
 
-      set[:aws_access_key_id]
-      set[:secret_access_key]
-      set[:merchant_id]
-      set[:marketplace]
-      set[:user_agent]
+      options
     end
   end
 end
